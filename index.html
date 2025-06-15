@@ -1,3 +1,184 @@
-<html>
-    
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Monthly Arrival Predictions</title>
+  <style>
+    /* Modern clean styling */
+    body {
+      font-family: 'Inter', sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+        Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, #1e1e2f, #3a3a5a);
+      color: #e0e0e0;
+      min-height: 100vh;
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 2rem;
+    }
+
+    h1 {
+      font-weight: 900;
+      font-size: 2.5rem;
+      background: linear-gradient(90deg, #8b5cf6, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+    }
+
+    label {
+      font-size: 1.1rem;
+      margin-right: 1rem;
+      user-select: none;
+    }
+
+    select {
+      font-size: 1.1rem;
+      padding: 0.5rem 1rem;
+      border-radius: 12px;
+      border: none;
+      outline: none;
+      background: #2f2f4a;
+      color: #e0e0e0;
+      min-width: 160px;
+      box-shadow: 0 4px 8px rgba(139, 92, 246, 0.2);
+      transition: background 0.3s ease;
+      cursor: pointer;
+    }
+
+    select:hover,
+    select:focus {
+      background: #453f70;
+    }
+
+    button {
+      padding: 0.75rem 1.75rem;
+      font-size: 1.1rem;
+      background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+      border: none;
+      border-radius: 16px;
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 30px rgba(139, 92, 246, 0.6);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #result {
+      max-width: 400px;
+      padding: 1rem 1.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      text-align: center;
+      font-size: 1.2rem;
+      user-select: text;
+      min-height: 3rem;
+    }
+
+    #result p,
+    #result h2 {
+      margin: 0.5rem 0;
+    }
+
+    #result p.error {
+      color: #f87171; /* Red 400 */
+      font-weight: 700;
+    }
+
+    #result h2 {
+      color: #a78bfa; /* Purple 400 */
+      font-weight: 900;
+      font-size: 1.75rem;
+    }
+
+    #result strong {
+      color: #06b6d4; /* cyan 500 */
+    }
+  </style>
+</head>
+<body>
+  <h1>Predict Arrivals</h1>
+  <div>
+    <label for="monthSelect">Select Month:</label>
+    <select id="monthSelect" aria-label="Month selection for prediction">
+      <option value="" disabled selected>Select a month</option>
+      <option value="January">January</option>
+      <option value="February">February</option>
+      <option value="March">March</option>
+      <option value="April">April</option>
+      <option value="May">May</option>
+      <option value="June">June</option>
+      <option value="July">July</option>
+      <option value="August">August</option>
+      <option value="September">September</option>
+      <option value="October">October</option>
+      <option value="November">November</option>
+      <option value="December">December</option>
+    </select>
+    <button id="predictBtn" disabled>Get Prediction</button>
+  </div>
+
+  <div id="result" role="region" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    (function () {
+      const monthSelect = document.getElementById('monthSelect');
+      const predictBtn = document.getElementById('predictBtn');
+      const resultDiv = document.getElementById('result');
+
+      // Enable button when a month is selected
+      monthSelect.addEventListener('change', function () {
+        predictBtn.disabled = !this.value;
+        resultDiv.innerHTML = ''; // clear previous results
+      });
+
+      predictBtn.addEventListener('click', getPrediction);
+
+      function getPrediction() {
+        const selectedMonth = monthSelect.value;
+        if (!selectedMonth) {
+          resultDiv.innerHTML = `<p class="error">Please select a month before requesting a prediction.</p>`;
+          return;
+        }
+
+        resultDiv.innerHTML = `<p>Loading prediction...</p>`;
+
+        fetch('http://127.0.0.1:5000/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ selected_month: selectedMonth }),
+        })
+          .then((res) => {
+            if (!res.ok) {
+              throw new Error(`Server error: ${res.statusText}`);
+            }
+            return res.json();
+          })
+          .then((data) => {
+            if (data.error) {
+              resultDiv.innerHTML = `<p class="error">${data.error}</p>`;
+            } else {
+              resultDiv.innerHTML = `<h2>${data.month}</h2><p>Predicted Arrivals: <strong>${data.prediction}</strong></p>`;
+            }
+          })
+          .catch((err) => {
+            resultDiv.innerHTML = `<p class="error">Error getting prediction: ${err.message}</p>`;
+          });
+      }
+    })();
+  </script>
+</body>
 </html>
